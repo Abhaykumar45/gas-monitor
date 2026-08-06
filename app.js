@@ -7,6 +7,7 @@ const deviceRoutes =require("./routes/deviceRoutes");
 const commandRoutes = require("./routes/commandRoutes");
 const alertRoutes=require("./routes/alertRoutes");
 const dashboardRoutes=require("./routes/dashboardRoutes");
+const alexaRoutes = require("./routes/alexaRoutes");
 const app = express();
 
 app.use(cors());
@@ -29,4 +30,5 @@ app.use("/api/device",deviceRoutes);
 // app.use("/api/alerts", alertRoutes);
 app.use("/api/device/command", commandRoutes);
 app.use("/api/alerts", alertRoutes);
+app.use("/api/alexa", alexaRoutes);
 module.exports = app;
