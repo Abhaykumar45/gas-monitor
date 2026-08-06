@@ -1,6 +1,20 @@
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+
+// Temporary storage (we'll replace this with Redis or MongoDB later)
+const authCodes = {};
+
+
+
 exports.authorize = async (req, res) => {
 
-    res.redirect("/oauth/login");
+    const redirect_uri = req.query.redirect_uri;
+
+    res.redirect(
+        `/oauth/login?redirect_uri=${encodeURIComponent(redirect_uri)}`
+    );
 
 };
 
@@ -21,7 +35,7 @@ exports.loginPage = async (req, res) => {
 
             <h3>Alexa Account Linking</h3>
 
-            <form method="POST" action="/oauth/login">
+            <form method="POST" action="/oauth/login?redirect_uri=${encodeURIComponent(req.query.redirect_uri || "")}">
 
                 <input
                     type="email"
@@ -56,20 +70,87 @@ exports.loginPage = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
 
-    res.send("Login coming in next step...");
+    try {
+
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+
+            return res.send("Invalid Email");
+
+        }
+
+        const match = await bcrypt.compare(password, user.password);
+
+        if (!match) {
+
+            return res.send("Invalid Password");
+
+        }
+
+        // Generate Authorization Code
+        const code = crypto.randomBytes(32).toString("hex");
+
+        authCodes[code] = user._id.toString();
+
+        // Redirect back to Amazon
+        const redirect_uri = req.query.redirect_uri;
+
+        res.redirect(`${redirect_uri}?code=${code}`);
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.send("Login Failed");
+
+    }
 
 };
 
 exports.token = async (req, res) => {
 
-    res.json({
+    try {
 
-        access_token: "temporary",
+        const  code  = req.body.code;
+        if (req.body.grant_type !== "authorization_code") {
+            return res.status(400).json({
+                error: "unsupported_grant_type"
+            });
+        }
 
-        token_type: "Bearer",
+        const userId = authCodes[code];
 
-        expires_in: 3600
+        if (!userId) {
+            return res.status(400).json({
+                error: "Invalid authorization code"
+            });
+        }
 
-    });
+        delete authCodes[code];
+
+        const accessToken = jwt.sign(
+            { id: userId },
+            process.env.JWT_SECRET,
+            { expiresIn: "30d" }
+        );
+
+        res.json({
+            access_token: accessToken,
+            token_type: "Bearer",
+            expires_in: 2592000
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).json({
+            error: "Server Error"
+        });
+
+    }
 
 };
