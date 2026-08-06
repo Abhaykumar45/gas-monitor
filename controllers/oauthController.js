@@ -40,7 +40,31 @@ exports.loginPage = async (req, res) => {
 
             <h3>Alexa Account Linking</h3>
 
-            <form method="POST" action="/oauth/login?redirect_uri=${encodeURIComponent(req.query.redirect_uri || "")}">
+            <form method="POST" action="/oauth/login">
+
+    <input
+        type="hidden"
+        name="redirect_uri"
+        value="${req.query.redirect_uri || ""}"
+    />
+
+    <input
+        type="hidden"
+        name="state"
+        value="${req.query.state || ""}"
+    />
+
+    <input
+        type="hidden"
+        name="client_id"
+        value="${req.query.client_id || ""}"
+    />
+
+    <input
+        type="hidden"
+        name="scope"
+        value="${req.query.scope || ""}"
+    />
 
                 <input
                     type="email"
@@ -103,7 +127,7 @@ exports.loginUser = async (req, res) => {
 
         authCodes[code] = user._id.toString();
 
-        const { redirect_uri, state } = req.query;
+        const { redirect_uri, state } = req.body;
         console.log("Redirecting to:");
 console.log(
     `${redirect_uri}?code=${code}&state=${state}`
