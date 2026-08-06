@@ -1,5 +1,5 @@
 const Device = require("../models/Device");
-const { publishCommand } = require("../services/mqttPublisher");
+const { publishCommand } = require("../mqtt/mqttPublisher");
 
 exports.relayControl = async (req, res) => {
 
