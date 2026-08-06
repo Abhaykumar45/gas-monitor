@@ -74,37 +74,39 @@ exports.loginUser = async (req, res) => {
 
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        const cleanEmail = email.trim().toLowerCase();
+
+        const user = await User.findOne({
+            email: { $regex: new RegExp(`^${cleanEmail}$`, "i") }
+        });
 
         if (!user) {
 
-            return res.send("Invalid Email");
+            return res.send("Invalid Email or Password");
 
         }
 
-        const match = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
 
-        if (!match) {
+        if (!isMatch) {
 
-            return res.send("Invalid Password");
+            return res.send("Invalid Email or Password");
 
         }
 
-        // Generate Authorization Code
         const code = crypto.randomBytes(32).toString("hex");
 
         authCodes[code] = user._id.toString();
 
-        // Redirect back to Amazon
         const redirect_uri = req.query.redirect_uri;
 
-        res.redirect(`${redirect_uri}?code=${code}`);
+        return res.redirect(`${redirect_uri}?code=${code}`);
 
     } catch (err) {
 
         console.log(err);
 
-        res.send("Login Failed");
+        return res.send("Login Failed");
 
     }
 
@@ -114,33 +116,38 @@ exports.token = async (req, res) => {
 
     try {
 
-        const  code  = req.body.code;
-        if (req.body.grant_type !== "authorization_code") {
-            return res.status(400).json({
-                error: "unsupported_grant_type"
-            });
-        }
+        const { code } = req.body;
 
         const userId = authCodes[code];
 
         if (!userId) {
+
             return res.status(400).json({
                 error: "Invalid authorization code"
             });
+
         }
 
         delete authCodes[code];
 
         const accessToken = jwt.sign(
+
             { id: userId },
+
             process.env.JWT_SECRET,
+
             { expiresIn: "30d" }
+
         );
 
         res.json({
+
             access_token: accessToken,
+
             token_type: "Bearer",
+
             expires_in: 2592000
+
         });
 
     } catch (err) {
@@ -148,7 +155,9 @@ exports.token = async (req, res) => {
         console.log(err);
 
         res.status(500).json({
+
             error: "Server Error"
+
         });
 
     }
