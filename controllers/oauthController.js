@@ -10,13 +10,15 @@ const authCodes = {};
 
 exports.authorize = async (req, res) => {
 
-    console.log("========== AUTHORIZE ==========");
-    console.log(req.query);
-
-    const redirect_uri = req.query.redirect_uri;
+    const {
+        redirect_uri,
+        state,
+        client_id,
+        scope
+    } = req.query;
 
     res.redirect(
-        `/oauth/login?redirect_uri=${encodeURIComponent(redirect_uri)}`
+        `/oauth/login?redirect_uri=${encodeURIComponent(redirect_uri)}&state=${encodeURIComponent(state)}&client_id=${encodeURIComponent(client_id)}&scope=${encodeURIComponent(scope)}`
     );
 
 };
@@ -101,9 +103,15 @@ exports.loginUser = async (req, res) => {
 
         authCodes[code] = user._id.toString();
 
-        const redirect_uri = req.query.redirect_uri;
+        const { redirect_uri, state } = req.query;
+        console.log("Redirecting to:");
+console.log(
+    `${redirect_uri}?code=${code}&state=${state}`
+);
 
-        return res.redirect(`${redirect_uri}?code=${code}`);
+return res.redirect(
+    `${redirect_uri}?code=${code}&state=${encodeURIComponent(state)}`
+);
 
     } catch (err) {
 
