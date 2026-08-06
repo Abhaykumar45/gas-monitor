@@ -8,12 +8,13 @@ const commandRoutes = require("./routes/commandRoutes");
 const alertRoutes=require("./routes/alertRoutes");
 const dashboardRoutes=require("./routes/dashboardRoutes");
 const alexaRoutes = require("./routes/alexaRoutes");
+const oauthRoutes = require("./routes/oauthRoutes");
 const app = express();
 
 app.use(cors());
 
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 
 
 // app.get("/health", (req, res) => {
@@ -34,4 +35,5 @@ app.use("/api/device",deviceRoutes);
 app.use("/api/device/command", commandRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/alexa", alexaRoutes);
+app.use("/oauth", oauthRoutes);
 module.exports = app;
