@@ -10,6 +10,9 @@ const authCodes = {};
 
 exports.authorize = async (req, res) => {
 
+    console.log("========== AUTHORIZE ==========");
+    console.log(req.query);
+
     const redirect_uri = req.query.redirect_uri;
 
     res.redirect(
