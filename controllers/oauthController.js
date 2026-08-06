@@ -116,14 +116,42 @@ exports.token = async (req, res) => {
 
     try {
 
-        const { code } = req.body;
+        const auth = req.headers.authorization;
+
+        if (!auth || !auth.startsWith("Basic ")) {
+
+            return res.status(401).json({
+                error: "invalid_client"
+            });
+
+        }
+
+        const base64 = auth.split(" ")[1];
+
+        const credentials = Buffer.from(base64, "base64")
+            .toString("utf8");
+
+        const [clientId, clientSecret] = credentials.split(":");
+
+        if (
+            clientId !== "smartgas-client" ||
+            clientSecret !== "smartgas-secret-2026"
+        ) {
+
+            return res.status(401).json({
+                error: "invalid_client"
+            });
+
+        }
+
+        const code = req.body.code;
 
         const userId = authCodes[code];
 
         if (!userId) {
 
             return res.status(400).json({
-                error: "Invalid authorization code"
+                error: "invalid_grant"
             });
 
         }
@@ -140,7 +168,7 @@ exports.token = async (req, res) => {
 
         );
 
-        res.json({
+        return res.json({
 
             access_token: accessToken,
 
@@ -154,9 +182,9 @@ exports.token = async (req, res) => {
 
         console.log(err);
 
-        res.status(500).json({
+        return res.status(500).json({
 
-            error: "Server Error"
+            error: "server_error"
 
         });
 
