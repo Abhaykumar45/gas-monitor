@@ -131,3 +131,70 @@ exports.getGasStatus = async (req, res) => {
         });
     }
 };
+exports.checkAllDevices = async (req, res) => {
+    try {
+
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({
+                speech: "Unauthorized"
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        const devices = await Device.find({ userId });
+
+        if (!devices || devices.length === 0) {
+            return res.json({
+                speech: "No devices found in your account."
+            });
+        }
+
+        // Find devices with problem
+        const criticalDevices = devices.filter(
+            d => d.alertState === "Critical"
+        );
+
+        const warningDevices = devices.filter(
+            d => d.alertState === "Warning"
+        );
+
+        // 🚨 CRITICAL FIRST
+        if (criticalDevices.length > 0) {
+
+            const names = criticalDevices.map(d => d.deviceName).join(", ");
+
+            return res.json({
+                speech: `Alert! Gas leak detected in ${names}. Please take immediate action.`
+            });
+
+        }
+
+        // ⚠️ WARNING
+        if (warningDevices.length > 0) {
+
+            const names = warningDevices.map(d => d.deviceName).join(", ");
+
+            return res.json({
+                speech: `Warning! Elevated gas levels detected in ${names}. Please check the area.`
+            });
+
+        }
+
+        // ✅ SAFE
+        return res.json({
+            speech: "No gas leak detected. All devices are normal."
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            speech: "Something went wrong."
+        });
+    }
+};
