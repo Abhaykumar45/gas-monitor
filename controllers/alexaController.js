@@ -78,3 +78,56 @@ const userId = decoded.id;
     }
 
 };
+exports.getGasStatus = async (req, res) => {
+    try {
+
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({
+                speech: "Unauthorized"
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const userId = decoded.id;
+
+        const { deviceName } = req.body;
+
+        const device = await Device.findOne({
+            userId,
+            deviceName: new RegExp(`^${deviceName}$`, "i")
+        });
+
+        if (!device) {
+            return res.json({
+                success: false,
+                speech: `I couldn't find a device named ${deviceName}`
+            });
+        }
+
+        let speech = "";
+
+        if (device.alertState === "Normal") {
+            speech = `The gas status in ${device.deviceName} is Normal. Everything is safe.`;
+        } else if (device.alertState === "Warning") {
+            speech = `The gas status in ${device.deviceName} is Warning. Please check the area.`;
+        } else {
+            speech = `The gas status in ${device.deviceName} is Critical. Gas leak detected. Please take action immediately.`;
+        }
+
+        return res.json({
+            success: true,
+            speech
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            speech: "Something went wrong"
+        });
+    }
+};

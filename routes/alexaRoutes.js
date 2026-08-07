@@ -6,5 +6,5 @@ const {
 } = require("../controllers/alexaController");
 
 router.post("/relay", relayControl);
-
+router.post("/gas-status", getGasStatus);
 module.exports = router;
