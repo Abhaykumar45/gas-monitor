@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    relayControl,
+    relayControl,getGasStatus
 } = require("../controllers/alexaController");
 
 router.post("/relay", relayControl);
