@@ -9,7 +9,7 @@ function startMQTT(io) {
 
     const notificationCooldown = {};
 
-    const COOLDOWN = 1 * 60 * 1000; // 5 Minutes
+    const COOLDOWN = 5 * 60 * 1000; // 5 Minutes
 
     client.on("connect", () => {
 
