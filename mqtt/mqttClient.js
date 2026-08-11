@@ -9,7 +9,7 @@ function startMQTT(io) {
 
     const notificationCooldown = {};
 
-    const COOLDOWN = 5 * 60 * 1000; // 5 Minutes
+    const COOLDOWN = 1 * 60 * 1000; // 5 Minutes
 
     client.on("connect", () => {
 
@@ -72,7 +72,6 @@ console.log("Subscribed : sensor/+/relay");
 
             // Update Device Status
             device.gas= data.gas;
-            device.alertState = level;
             device.status = "online";
             device.lastSeen = new Date();
 
@@ -84,47 +83,40 @@ console.log("Sending Socket to:", device.userId.toString());
     gas: data.gas,
     relay: device.relay,
     valve: device.valve,
-    alertState: device.alertState,
     mode: device.mode,
     status: "online",
     lastSeen: device.lastSeen,
 });
 
             // Determine Alert Level
-            // Determine Alert Level
-let level = "Normal";
+            let level = null;
 
-if (data.gas >= 900) {
+            if (data.gas >= 900) {
 
-    level = "Critical";
+                level = "Critical";
 
-} else if (data.gas >= 300) {
+            } else if (data.gas >= 300) {
 
-    level = "Warning";
-}
+                level = "Warning";
 
-// Update Device Alert State
-device.alertState = level;
+            }
 
-await device.save();
+            // Save Alert
+            if (level) {
 
-console.log(`Gas: ${data.gas} | Alert State: ${level}`);
+                await Alert.create({
 
-// Save Alert only for Warning/Critical
-if (level !== "Normal") {
+                    deviceId,
 
-    await Alert.create({
+                    gas: data.gas,
 
-        deviceId,
+                    level
 
-        gas: data.gas,
+                });
 
-        level
+                console.log(`Alert Saved (${level})`);
 
-    });
-
-    console.log(`Alert Saved (${level})`);
-}
+            }
 
             // Critical Notification
             if (level === "Critical") {
