@@ -100,6 +100,9 @@ console.log("Sending Socket to:", device.userId.toString());
                 level = "Warning";
 
             }
+            device.alertState = level;
+
+await device.save();
 
             // Save Alert
             if (level) {
@@ -107,7 +110,7 @@ console.log("Sending Socket to:", device.userId.toString());
                 await Alert.create({
 
                     deviceId,
-
+                     
                     gas: data.gas,
 
                     level
