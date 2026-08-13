@@ -209,6 +209,54 @@ exports.googleFulfillment = async (req, res) => {
 
             });
         }
+        // =====================================
+// QUERY
+// =====================================
+
+if (intent === "action.devices.QUERY") {
+
+    const requestedDevices =
+        req.body.inputs[0].payload.devices;
+
+    const deviceStates = {};
+
+    for (const googleDevice of requestedDevices) {
+
+        const device = await Device.findOne({
+            deviceId: googleDevice.id,
+            userId: userId
+        });
+
+        if (!device) {
+
+            deviceStates[googleDevice.id] = {
+                online: false
+            };
+
+            continue;
+        }
+
+        deviceStates[googleDevice.id] = {
+
+            online: device.status === "online",
+
+            on: device.relay === true
+
+        };
+    }
+
+    return res.json({
+
+        requestId: req.body.requestId,
+
+        payload: {
+
+            devices: deviceStates
+
+        }
+
+    });
+}
 
 
         // =====================================
