@@ -47,7 +47,7 @@ const userId = decoded.id;
 
         publishCommand(device.deviceId, {
 
-            relay: action === "on" ? 1 : 0,
+            relay: action === "on" ? 1 : 0 ,
 
             valve: device.valve,
 
