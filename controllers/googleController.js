@@ -1,5 +1,6 @@
 const Device = require("../models/Device");
 const jwt = require("jsonwebtoken");
+const { publishCommand } = require("../mqtt/mqttPublisher");
 
 const getUserFromToken = (req) => {
 
@@ -31,9 +32,9 @@ exports.googleFulfillment = async (req, res) => {
         console.log("Intent:", intent);
         console.log("User:", userId);
 
-        // =========================
+        // =====================================
         // SYNC
-        // =========================
+        // =====================================
 
         if (intent === "action.devices.SYNC") {
 
@@ -83,26 +84,162 @@ exports.googleFulfillment = async (req, res) => {
             });
         }
 
-        // =========================
+
+        // =====================================
+        // EXECUTE
+        // =====================================
+
+        if (intent === "action.devices.EXECUTE") {
+
+            const commands =
+                req.body.inputs[0].payload.commands;
+
+            const results = [];
+
+            for (const command of commands) {
+
+                const devices = command.devices;
+
+                const execution =
+                    command.execution[0];
+
+                for (const googleDevice of devices) {
+
+                    const device = await Device.findOne({
+
+                        deviceId: googleDevice.id,
+
+                        userId: userId
+
+                    });
+
+                    if (!device) {
+
+                        results.push({
+
+                            ids: [googleDevice.id],
+
+                            status: "ERROR",
+
+                            errorCode: "deviceNotFound"
+
+                        });
+
+                        continue;
+
+                    }
+
+                    let relay;
+
+                    if (
+                        execution.command ===
+                        "action.devices.commands.OnOff"
+                    ) {
+
+                        relay = execution.params.on
+                            ? 1
+                            : 0;
+
+                    } else {
+
+                        results.push({
+
+                            ids: [googleDevice.id],
+
+                            status: "ERROR",
+
+                            errorCode: "functionNotSupported"
+
+                        });
+
+                        continue;
+                    }
+
+
+                    // Send relay command through MQTT
+                    publishCommand(
+                        device.deviceId,
+                        {
+                            relay: relay,
+                            valve: device.valve,
+                            mode: device.mode
+                        }
+                    );
+
+
+                    // Update database
+                    device.relay = relay === 1;
+
+                    await device.save();
+
+
+                    console.log(
+                        `Google Home: ${device.deviceName} relay ${
+                            relay === 1 ? "ON" : "OFF"
+                        }`
+                    );
+
+
+                    results.push({
+
+                        ids: [device.deviceId],
+
+                        status: "SUCCESS",
+
+                        states: {
+
+                            online: device.status === "online",
+
+                            on: relay === 1
+
+                        }
+
+                    });
+
+                }
+            }
+
+            return res.json({
+
+                requestId: req.body.requestId,
+
+                payload: {
+                    commands: results
+                }
+
+            });
+        }
+
+
+        // =====================================
         // DISCONNECT
-        // =========================
+        // =====================================
 
         if (intent === "action.devices.DISCONNECT") {
 
             return res.json({});
         }
 
+
         return res.status(400).json({
+
             error: "Unsupported intent"
+
         });
 
     } catch (err) {
 
-        console.log("Google Home Error:", err.message);
+        console.log(
+            "Google Home Error:",
+            err.message
+        );
 
         return res.status(401).json({
+
             error: "Unauthorized"
+
         });
 
     }
+
 };
