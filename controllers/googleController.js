@@ -259,6 +259,10 @@ if (intent === "action.devices.QUERY") {
 
         };
     }
+    console.log(
+    "QUERY RESPONSE:",
+    JSON.stringify(deviceStates, null, 2)
+);
 
     return res.json({
 
