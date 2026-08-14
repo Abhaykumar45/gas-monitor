@@ -245,9 +245,7 @@ if (intent === "action.devices.QUERY") {
         if (!device) {
 
             deviceStates[googleDevice.id] = {
-                online: false,
-                status: "ERROR",
-                errorCode: "deviceNotFound"
+                online: false
             };
 
             continue;
@@ -255,27 +253,16 @@ if (intent === "action.devices.QUERY") {
 
         deviceStates[googleDevice.id] = {
 
-            // Relay status
-            on: device.relay === true,
-
-            // Device online status
             online: device.status === "online",
 
-            // Query succeeded
-            status: "SUCCESS",
-
-            // Your gas information
-            gas: device.gas,
-
-            gasStatus: device.alertState
+            on: device.relay === true
 
         };
     }
-
     console.log(
-        "GOOGLE QUERY RESPONSE:",
-        JSON.stringify(deviceStates, null, 2)
-    );
+    "QUERY RESPONSE:",
+    JSON.stringify(deviceStates, null, 2)
+);
 
     return res.json({
 
