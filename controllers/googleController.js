@@ -68,7 +68,7 @@ console.log(
                 ],
 
                 name: {
-                    name: device.deviceName
+                    name: `${device.deviceName} Relay`
                 },
 
                 willReportState: false,
