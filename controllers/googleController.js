@@ -22,6 +22,13 @@ const getUserFromToken = (req) => {
 exports.googleFulfillment = async (req, res) => {
 
     try {
+        console.log(
+    "========== GOOGLE RAW REQUEST =========="
+);
+
+console.log(
+    JSON.stringify(req.body, null, 2)
+);
 
         const decoded = getUserFromToken(req);
         const userId = decoded.id;
@@ -41,7 +48,15 @@ exports.googleFulfillment = async (req, res) => {
             const devices = await Device.find({
                 userId: userId
             });
-
+         console.log(
+    "DEVICES FOUND:",
+    devices.map(device => ({
+        id: device.deviceId,
+        name: device.deviceName,
+        relay: device.relay,
+        status: device.status
+    }))
+);
             const googleDevices = devices.map(device => ({
 
                 id: device.deviceId,
