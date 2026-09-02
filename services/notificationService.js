@@ -17,19 +17,26 @@ async function sendNotification(deviceId, gas, level) {
     // Find the owner
     const user = await User.findById(device.userId);
 
-    if (!user || !user.expoPushToken) {
-      console.log("No Push Token Found");
+    if (!user || !user.expoPushTokens || user.expoPushTokens.length === 0) {
+      console.log("No Push Tokens Found");
       return;
     }
 
-    if (!Expo.isExpoPushToken(user.expoPushToken)) {
-      console.log("Invalid Expo Push Token");
+    // Keep only valid Expo push tokens
+    const validTokens = user.expoPushTokens.filter((token) =>
+      Expo.isExpoPushToken(token)
+    );
+
+    if (validTokens.length === 0) {
+      console.log("No Valid Expo Push Tokens Found");
       return;
     }
 
-    const message = {
-      to: user.expoPushToken,
+    // Create a message for every device
+    const messages = validTokens.map((token) => ({
+      to: token,
       sound: "default",
+
       title:
         level === "Critical"
           ? "🚨 Critical Gas Leak"
@@ -45,11 +52,19 @@ async function sendNotification(deviceId, gas, level) {
         gas,
         level,
       },
-    };
+    }));
 
-    await expo.sendPushNotificationsAsync([message]);
+    // Send notification to all devices
+    const chunks = expo.chunkPushNotifications(messages);
 
-    console.log("✅ Push Notification Sent");
+    for (const chunk of chunks) {
+      await expo.sendPushNotificationsAsync(chunk);
+    }
+
+    console.log(
+      `✅ Push Notification Sent to ${validTokens.length} device(s)`
+    );
+
   } catch (err) {
     console.log("Notification Error:", err.message);
   }
